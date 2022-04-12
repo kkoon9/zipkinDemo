@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.sleuth.annotation.NewSpan;
+import org.springframework.cloud.sleuth.annotation.SpanTag;
 import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,9 +34,8 @@ public class BackendApplication {
 
         @GetMapping("/order/{orderNumber}")
         public String order(@PathVariable Long orderNumber) {
-            long time = System.nanoTime(); // nanoTime도 중복을 발생할 수 있지만 테스트에서는 nanoTime()을 사용
-            log.info("{}: controller : {}", time, orderNumber);
-            paymentService.payment(orderNumber * 10, time);
+            log.info("{}: controller", orderNumber);
+            paymentService.payment(orderNumber * 10);
             return "OK " + orderNumber;
         }
     }
@@ -43,14 +43,14 @@ public class BackendApplication {
     @Service
     @Slf4j
     static class BackendPaymentService {
-        @NewSpan
-        public void payment(Long price, long time) {
+        @NewSpan(name = "backendPayment") // 색인의 역할을 한다.
+        public void payment(@SpanTag("payment-price") Long price) {
             try {
                 TimeUnit.MILLISECONDS.sleep(new Random().nextInt(500) + 100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
-            log.info("{}: payment approved : {}" , time, price);
+            log.info("{}: payment approved", price);
         }
     }
 }
